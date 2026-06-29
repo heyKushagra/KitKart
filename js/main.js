@@ -51,6 +51,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Cart Badge
     updateCartBadge();
 
+    // Dynamic Product Detail Page Handler
+    const urlParams = new URLSearchParams(window.location.search);
+    const prodName = urlParams.get('name');
+    const prodPrice = urlParams.get('price');
+    const prodImage = urlParams.get('image');
+
+    if (prodName && prodPrice && prodImage) {
+        const titleEl = document.querySelector('.product-page-title');
+        const priceEl = document.querySelector('.product-page-price');
+        const imgEl = document.querySelector('.product-image-main img');
+
+        if (titleEl) titleEl.textContent = prodName;
+        if (priceEl) priceEl.textContent = `₹${parseFloat(prodPrice).toLocaleString('en-IN')}`;
+        if (imgEl) imgEl.setAttribute('src', prodImage);
+    }
+
     // Listen for Add to Cart click on product pages
     const addToCartBtn = document.querySelector('.product-btn-cart');
     if (addToCartBtn) {
@@ -113,4 +129,56 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 2000);
         });
     }
+
+    // Listen for Quick Add to Cart click on homepage product cards
+    const quickAddBtns = document.querySelectorAll('.product-card .btn-icon');
+    quickAddBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault(); // Stop navigating to product.html
+            e.stopPropagation(); // Stop event bubbling
+
+            const card = btn.closest('.product-card');
+            if (card) {
+                const titleEl = card.querySelector('.product-title');
+                const priceEl = card.querySelector('.product-price');
+                const imgEl = card.querySelector('.product-img');
+
+                const name = titleEl ? titleEl.textContent.trim() : 'Premium Jersey';
+                const priceText = priceEl ? priceEl.textContent.trim() : '₹999';
+                const price = parseFloat(priceText.replace(/[^\d]/g, ''));
+                const image = imgEl ? imgEl.getAttribute('src') : 'assets/jersey1.jpg';
+                const size = 'M'; // Default size for quick add
+
+                const item = {
+                    id: `${name.toLowerCase().replace(/\s+/g, '-')}-${size}`,
+                    name: name,
+                    price: price,
+                    image: image,
+                    size: size,
+                    quantity: 1
+                };
+
+                let cart = JSON.parse(localStorage.getItem('kitkart_cart')) || [];
+                const existingIndex = cart.findIndex(cItem => cItem.id === item.id);
+                if (existingIndex > -1) {
+                    cart[existingIndex].quantity += 1;
+                } else {
+                    cart.push(item);
+                }
+
+                localStorage.setItem('kitkart_cart', JSON.stringify(cart));
+                updateCartBadge();
+
+                // Quick visual indicator (pulse icon color to gold)
+                const svg = btn.querySelector('svg');
+                if (svg) {
+                    const originalStroke = svg.style.stroke;
+                    svg.style.stroke = 'var(--clr-gold)';
+                    setTimeout(() => {
+                        svg.style.stroke = originalStroke;
+                    }, 1000);
+                }
+            }
+        });
+    });
 });
